@@ -1,4 +1,4 @@
-// Most of the functionality of this library is based on the VL53L0X API
+\// Most of the functionality of this library is based on the VL53L0X API
 // provided by ST (STSW-IMG005), and some of the explanatory comments are quoted
 // or paraphrased from the API source code, API user manual (UM2039), and the
 // VL53L0X datasheet.

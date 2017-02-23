@@ -2,7 +2,7 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "VL53L0X.h"
-#include "Libraries/motor_driver/DualMC33926MotorShield.h"
+#include "DualMC33926MotorShield.h"
 
 #define OUTPUT_BINARY_ACCELGYRO
 
@@ -23,19 +23,32 @@
 //#define HIGH_SPEED
 //#define HIGH_ACCURACY
 
-#define ENC_L1 30
-#define ENC_L2 31
-#define ENC_R1 32
-#define ENC_R2 33
+#define ENC_L1 2
+#define ENC_L2 3
+#define ENC_R1 18
+#define ENC_R2 19
+
+/* Already defined in default constructor
+#define M1DIR 7
+#define M1PWM 9
+#define M1FB A0
+#define M2DIR 8
+#define M2PWM 10
+#define M2FB A1
+#define nD2 4
+#define nSF 12
+*/
 
 VL53L0X tofSensor;
 MPU6050 gyroSensor;
 Encoder encoderLeft(ENC_L1, ENC_L2);
 Encoder encoderRight(ENC_R1, ENC_R2);
 
+DualMC33926MotorShield md;
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 uint16_t distance;
+uint16_t s1, s2;
 
 void errorHandle(uint8_t error)
 {
@@ -44,12 +57,20 @@ void errorHandle(uint8_t error)
   Serial.println();
 }
 
-void updateValues()
+void updateSensors()
 {
   gyroSensor.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   distance = tofSensor.readRangeSingleMillimeters();
   if (tofSensor.timeoutOccurred())
     errorHandle(2);
+}
+
+// Range from -400 to 400
+void motor()
+{
+  md.setSpeeds(s1, s2);
+  if (md.getFault())
+    errorHandle(3);
 }
 
 bool state1()
@@ -99,6 +120,8 @@ void setup()
   gyroSensor.initialize();
   if (!gyroSensor.testConnection())
     errorHandle(1);
+
+  md.init();
 }
 
 void loop() {

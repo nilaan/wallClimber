@@ -1,3 +1,4 @@
+#include <Encoder.h>
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "VL53L0X.h"
@@ -22,8 +23,15 @@
 //#define HIGH_SPEED
 //#define HIGH_ACCURACY
 
+#define ENC_L1 30
+#define ENC_L2 31
+#define ENC_R1 32
+#define ENC_R2 33
+
 VL53L0X tofSensor;
 MPU6050 gyroSensor;
+Encoder encoderLeft(ENC_L1, ENC_L2);
+Encoder encoderRight(ENC_R1, ENC_R2);
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;

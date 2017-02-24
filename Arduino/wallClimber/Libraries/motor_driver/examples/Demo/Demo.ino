@@ -9,6 +9,8 @@ void stopIfFault()
     Serial.println("fault");
     while(1);
   }
+  else 
+    Serial.println(digitalRead(12));
 }
 
 void setup()
@@ -26,20 +28,23 @@ void loop()
     stopIfFault();
     if (abs(i)%200 == 100)
     {
-      Serial.print("M1 current: ");
-      Serial.println(md.getM1CurrentMilliamps());
+      Serial.println("M1 current: ");
+//      Serial.println(md.getM1CurrentMilliamps());
     }
     delay(2);
   }
-  
+  md.setM1Speed(400);
+  delay(10000);
+  md.setM1Speed(0);
+  /*
   for (int i = 400; i >= -400; i--)
   {
     md.setM1Speed(i);
     stopIfFault();
     if (abs(i)%200 == 100)
     {
-      Serial.print("M1 current: ");
-      Serial.println(md.getM1CurrentMilliamps());
+      Serial.println("M1 current: ");
+//      Serial.println(md.getM1CurrentMilliamps());
     }
     delay(2);
   }
@@ -50,12 +55,13 @@ void loop()
     stopIfFault();
     if (abs(i)%200 == 100)
     {
-      Serial.print("M1 current: ");
-      Serial.println(md.getM1CurrentMilliamps());
+      Serial.println("M1 current: ");
+//      Serial.println(md.getM1CurrentMilliamps());
     }
     delay(2);
   }
-
+  */
+/*
   for (int i = 0; i <= 400; i++)
   {
     md.setM2Speed(i);
@@ -91,4 +97,6 @@ void loop()
     }
     delay(2);
   }
+  */
+  while(1);
 }

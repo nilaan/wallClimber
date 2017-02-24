@@ -40,7 +40,7 @@ void DualMC33926MotorShield::init()
   pinMode(_M2FB,INPUT);
   pinMode(_nD2,OUTPUT);
   digitalWrite(_nD2,HIGH); // default to on
-  pinMode(_nSF,INPUT);
+  pinMode(_nSF,INPUT_PULLUP);
 
   #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__)
   // Timer 1 configuration

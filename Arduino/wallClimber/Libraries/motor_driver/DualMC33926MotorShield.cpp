@@ -5,26 +5,16 @@
 DualMC33926MotorShield::DualMC33926MotorShield()
 {
   //Pin map
-  _nD2 = 4;
-  _M1DIR = 7;
-  _M2DIR = 8;
-  _nSF = 12;
-  _M1FB = A0; 
-  _M2FB = A1;
-}
+  _nD2 = 34;
+  _D1 = 38;
 
-DualMC33926MotorShield::DualMC33926MotorShield(unsigned char M1DIR, unsigned char M1PWM, unsigned char M1FB,
-                                               unsigned char M2DIR, unsigned char M2PWM, unsigned char M2FB,
-                                               unsigned char nD2, unsigned char nSF)
-{
-  //Pin map
-  //PWM1 and PWM2 cannot be remapped because the library assumes PWM is on timer1
-  _nD2 = nD2;
-  _M1DIR = M1DIR;
-  _M2DIR = M2DIR;
-  _nSF = nSF;
-  _M1FB = M1FB; 
-  _M2FB = M2FB;
+  _nD2_2 = 48;
+  _D1_2 = 52; 
+
+  _M1DIR = 12;
+  _M2DIR = 7;
+
+  _EN = 44;
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
@@ -34,13 +24,22 @@ void DualMC33926MotorShield::init()
 
   pinMode(_M1DIR,OUTPUT);
   pinMode(_M1PWM,OUTPUT);
-  pinMode(_M1FB,INPUT);
   pinMode(_M2DIR,OUTPUT);
   pinMode(_M2PWM,OUTPUT);
-  pinMode(_M2FB,INPUT);
+  
   pinMode(_nD2,OUTPUT);
-  digitalWrite(_nD2,HIGH); // default to on
-  pinMode(_nSF,INPUT_PULLUP);
+  digitalWrite(_nD2,HIGH); // default to on  
+  pinMode(_D1,OUTPUT);
+  digitalWrite(_D1,LOW); // default to off
+  
+  pinMode(_nD2_2,OUTPUT);
+  digitalWrite(_nD2_2,HIGH); // default to on
+  pinMode(_D1_2,OUTPUT);
+  digitalWrite(_D1_2,LOW); // default to off
+
+  pinMode(_EN,OUTPUT);
+  digitalWrite(_EN,HIGH);
+
 
   #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__)
   // Timer 1 configuration
@@ -107,24 +106,4 @@ void DualMC33926MotorShield::setSpeeds(int m1Speed, int m2Speed)
 {
   setM1Speed(m1Speed);
   setM2Speed(m2Speed);
-}
-
-// Return motor 1 current value in milliamps.
-unsigned int DualMC33926MotorShield::getM1CurrentMilliamps()
-{
-  // 5V / 1024 ADC counts / 525 mV per A = 9 mA per count
-  return analogRead(_M1FB) * 9;
-}
-
-// Return motor 2 current value in milliamps.
-unsigned int DualMC33926MotorShield::getM2CurrentMilliamps()
-{
-  // 5V / 1024 ADC counts / 525 mV per A = 9 mA per count
-  return analogRead(_M2FB) * 9;
-}
-
-// Return error status
-unsigned char DualMC33926MotorShield::getFault()
-{
-  return !digitalRead(_nSF);
 }

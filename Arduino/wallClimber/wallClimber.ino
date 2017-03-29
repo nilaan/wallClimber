@@ -4,118 +4,159 @@
 #include "VL53L0X.h"
 #include "DualMC33926MotorShield.h"
 
-#define OUTPUT_BINARY_ACCELGYRO
+#define OUTPUT_READABLE_ACCELGYRO
 
-// Uncomment this line to use long range mode. This
-// increases the sensitivity of the sensor and extends its
-// potential range, but increases the likelihood of getting
-// an inaccurate reading because of reflections from objects
-// other than the intended target. It works best in dark
-// conditions.
-
-//#define LONG_RANGE
-
-
-// Uncomment ONE of these two lines to get
-// - higher speed at the cost of lower accuracy OR
-// - higher accuracy at the cost of lower speed
-
-//#define HIGH_SPEED
-//#define HIGH_ACCURACY
-
+/* encoder not being used
 #define ENC_L1 2
 #define ENC_L2 3
 #define ENC_R1 18
 #define ENC_R2 19
+*/
 
 /* Already defined in default constructor
-#define M1DIR 7
-#define M1PWM 9
-#define M1FB A0
-#define M2DIR 8
-#define M2PWM 10
-#define M2FB A1
-#define nD2 4
-#define nSF 12
+  _nD2_2 = 48;
+  _D1_2 = 52; 
+
+  _M1DIR = 12;
+  _M2DIR = 7;
+
+  _EN = 44;
+
+  _M1PWM = 10;
+  _M2PWM = 9;
 */
+
+// 2 Sonars
+#define ECHO_L 2
+#define TRIGGER_L 4
+#define ECHO_R 16
+#define TRIGGER_R 18
 
 VL53L0X tofSensor;
 MPU6050 gyroSensor;
-Encoder encoderLeft(ENC_L1, ENC_L2);
-Encoder encoderRight(ENC_R1, ENC_R2);
 
 DualMC33926MotorShield md;
 int16_t ax, ay, az;
-int16_t gx, gy, gz;
-uint16_t distance;
-uint16_t s1, s2;
+int32_t ax_t, ay_t, az_t;
+uint16_t tofDistance;
+int32_t sonarL;
+int32_t sonarR;
+int32_t duration;
+int32_t wallRefR = 0;
+int32_t wallRefL = 0;
+int32_t prevSonarL = 0;
+int32_t prevSonarR = 0;
+uint16_t s1 = 0, s2 = 0;
+uint16_t state = 0;
+uint16_t i = 0;
+uint16_t gyro_count = 200;
+uint32_t startTime;
+int32_t counter = 0;
 
 void errorHandle(uint8_t error)
 {
   Serial.print("Error Code: ");
   Serial.print(error);
   Serial.println();
+  digitalWrite(LED_BUILTIN, HIGH); 
 }
 
 void updateSensors()
 {
-  gyroSensor.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  for (i = 0; i < gyro_count; i++)
+  {
+    gyroSensor.getAcceleration(&ax, &ay, &az);
+    ax_t += ax;
+    ay_t += ay;
+    az_t += az;
+  }
+
+  ax_t /= gyro_count;
+  ay_t /= gyro_count;
+  az_t /= gyro_count;
+/*  
   distance = tofSensor.readRangeSingleMillimeters();
   if (tofSensor.timeoutOccurred())
     errorHandle(2);
+*/
 }
 
-// Range from -400 to 400
+void updateProximity()
+{
+/*
+  duration = 0;
+  while (duration < 582 || duration > 23280)
+  {
+    digitalWrite(TRIGGER_R, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIGGER_R, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIGGER_R, LOW);
+    duration = pulseIn(ECHO_R, HIGH);
+  }
+  sonarR = duration/58.2;
+  */
+  duration = 0;
+  while (duration < 582 || duration > 23280)
+  {
+    digitalWrite(TRIGGER_L, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIGGER_L, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIGGER_L, LOW);
+    duration = pulseIn(ECHO_L, HIGH);
+  }
+  sonarL = duration/58.2;
+/*
+  Serial.print(wallRefL);
+  Serial.print("\t");
+  Serial.print(wallRefR);
+  Serial.print("\t");
+  Serial.print(sonarL);
+  Serial.print("\t");
+  Serial.print(sonarR); 
+  Serial.print("\t");
+  Serial.print(wallRefL-sonarL);
+  Serial.print("\t");
+  Serial.println(wallRefR-sonarR);
+*/
+}
+
 void motor()
 {
   md.setSpeeds(s1, s2);
-  if (md.getFault())
-    errorHandle(3);
 }
 
-bool state1()
+void turnLeft()
 {
-  bool success = 0;
-
-  return success;
+  md.setSpeeds(-21, 380);
+  delay(900);
+  motor();
 }
 
-bool state2()
+void turnRight()
 {
-  bool success = 0;
-
-  return success;
-}
-bool state3()
-{
-  bool success = 0;
-
-  return success;
+  md.setSpeeds(360, -21);
+  delay(900);
+  motor();
 }
 
 void setup() 
 {
   Serial.begin(9600);
   Wire.begin();
-
+  pinMode(LED_BUILTIN, OUTPUT);
+/*
   tofSensor.init();
   tofSensor.setTimeout(500);
+  tofSensor.startContinuous();
+*/
 
-#if defined LONG_RANGE
-  // lower the return signal rate limit (default is 0.25 MCPS)
-  sensor.setSignalRateLimit(0.1);
-  // increase laser pulse periods (defaults are 14 and 10 PCLKs)
-  sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
-  sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
-#endif
+  pinMode(TRIGGER_L, OUTPUT);
+  pinMode(ECHO_L, INPUT);
 
-#if defined HIGH_SPEED
-  // reduce timing budget to 20 ms (default is about 33 ms)
-  sensor.setMeasurementTimingBudget(20000);
-#elif defined HIGH_ACCURACY
-  // increase timing budget to 200 ms
-  sensor.setMeasurementTimingBudget(200000);
-#endif
+  pinMode(TRIGGER_R, OUTPUT);
+  pinMode(ECHO_R, INPUT);  
 
   gyroSensor.initialize();
   if (!gyroSensor.testConnection())
@@ -124,19 +165,144 @@ void setup()
   md.init();
 }
 
+void searchBase(int32_t & refValue, int32_t & sonarValue) {
+    if ((refValue - sonarValue) > 25 && refValue < 300 && sonarValue < 150 && refValue > 10 && sonarValue > 10)
+    {
+      state++;
+      refValue = 1;
+    }
+    else
+      refValue = sonarValue;
+}
+
 void loop() {
-  // put your main code here, to run repeatedly:
 
-  bool stateFlag1 = 0;
-  bool stateFlag2 = 0;
-  bool stateFlag3 = 0;
+  delay(3000);
+  s1 = 400;
+  s2 = 365;
+  //md.setSpeeds(100, 0);
+  //delay(50);
+  md.setSpeeds(100, 100);
+  delay(50);
+  motor();
 
-  while (stateFlag1 == 0)
-    state1();
-  while (stateFlag2 == 0)
-    state2();
-  while (stateFlag3 == 0)
-    state3();
+  state = 2;
+
+  while (state < 3)
+  {
+    updateSensors();
+   
+    if (state == 0)
+    {
+      // detect get onto wall
+      if (ay_t > 15000)
+      {
+        s1 = 390;
+        motor();
+        state++;
+      }
+    }
+    
+    if (state == 1)
+    {
+      // detect get over edge 1
+      if (ay_t < 13500)
+      {
+        s1 = 200;
+        s2 = 192;
+        motor();
+      }
+    
+      // detect get over edge 2
+      if (ay_t < -7500)
+      {
+        s1 = 30;
+        s2 = 26;
+        motor();
+      }
+   
+      // detect get over edge 3
+      if (ay_t < -16000)
+      {
+        s1 = 400;
+        s2 = 370;
+        motor();
+        state++;
+      }
+    }
+
+    if (state == 2)
+    {
+      // detect get back on floor
+      if (az_t > 15500)
+      {
+        state++;
+
+        s1 = s2 = 200;
+        motor();
+        delay(500);
+        s1 = s2 = -100;
+        turnRight();
+        startTime = millis();
+        updateProximity();
+      }
+    }
+/*
+    Serial.print(state);
+    Serial.print("\t");
+    Serial.print(ax_t);
+    Serial.print("\t");
+    Serial.print(ay_t);
+    Serial.print("\t");
+    Serial.println(az_t);
+*/
+  }
+  
+  i = 0;
+  while (i < 6)
+  {
+    i++;
+    updateProximity();
+  }
+    
+  i = 0;
+
+  // enter pole detection
+  while(state == 3)
+  {
+    wallRefL += sonarL;
+    counter++;
+    
+    updateProximity();
+    
+    if ((wallRefL/counter - sonarL) > 30)
+    {
+      i = 1;
+      state++;
+    }
+    if ((millis()-startTime) > 2000 && s1 == -100)
+    {
+      s1 = s2 = 300;
+      motor();
+    }
+
+    Serial.print(wallRefL);
+    Serial.print("\t");
+    Serial.println(sonarL);
+  }
+  Serial.println("Detected Pole.");
+
+  while (state == 4)
+  {
+    if (i == 1)
+    {
+      turnLeft();
+      state++;
+    }
+  }
+  s1 = 0;
+  s2 = 0;
+  motor();
+  
   while(1);
-
 }

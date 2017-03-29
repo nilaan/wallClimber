@@ -12,11 +12,11 @@ void setup()
 void loop()
 {
   uint16_t s1 = 300;
-  uint16_t s2 = -111;
+  uint16_t s2 = 300;
   md.setSpeeds(s1, 0);
   delay(200);
   md.setSpeeds(s1, s2);
-  delay(20*1000);
+  delay(2000);
   md.setSpeeds(0, 0);
   /*
   for (int i = 0; i <= 400; i++)

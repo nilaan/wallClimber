@@ -14,6 +14,7 @@ void setup()
   Serial.begin(9600);
   Wire.begin();
 
+
   sensor.init();
   sensor.setTimeout(500);
 
@@ -35,7 +36,7 @@ int avgadc()
 
 void loop()
 {
-  Serial.print(avgadc());
+  Serial.print(sensor.readRangeContinuousMillimeters());
   if (sensor.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
 
   Serial.println();
